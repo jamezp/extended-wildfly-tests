@@ -60,39 +60,8 @@ public class ScriptPaths implements TestRunner {
     private final List<String> defaultPathNames = Arrays.asList(
             "wildfly spaced",
             "wildfly double  spaced",
-            "wildfly?home",
             "bi\u00dfchen-dir",
             "ni\u00f1o-dir",
-            "\"wildfly-home\""
-    );
-
-    /*
-     * Invalid Windows path characters per http://support2.microsoft.com/kb/177506
-     *  ^   Accent circumflex (caret)
-     *  &   Ampersand
-     *  '   Apostrophe (single quotation mark)
-     *  @   At sign
-     *  {   Brace left
-     *  }   Brace right
-     *  [   Bracket opening
-     *  ]   Bracket closing
-     *  ,   Comma
-     *  $   Dollar sign
-     *  =   Equal sign
-     *  !   Exclamation point
-     *  -   Hyphen
-     *  #   Number sign
-     *  (   Parenthesis opening
-     *  )   Parenthesis closing
-     *  %   Percent
-     *  .   Period
-     *  +   Plus
-     *  ~   Tilde
-     *  _   Underscore
-     */
-
-    private final List<String> linuxPathNames = Arrays.asList(
-            "wildfly\\home",
             "wildfly%home",
             "wildfly#home",
             "wildfly$home",
@@ -102,6 +71,29 @@ public class ScriptPaths implements TestRunner {
             "wildfly^home",
             "wildfly=home",
             "wildfly'home"
+    );
+
+    /*
+     * Invalid Windows path characters per http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#Naming_Conventions
+     * The following reserved characters:
+     *  < (less than)
+     *  > (greater than)
+     *  : (colon)
+     *  " (double quote)
+     *  / (forward slash)
+     *  \ (backslash)
+     *  | (vertical bar or pipe)
+     *  ? (question mark)
+     *  * (asterisk)
+     */
+
+    private final List<String> linuxPathNames = Arrays.asList(
+            "wildfly?home",
+            "wildfly\\home",
+            "wildfly<home",
+            "wildfly>home",
+            "wildfly|path",
+            "\"wildfly-home\""
     );
 
     @Override
