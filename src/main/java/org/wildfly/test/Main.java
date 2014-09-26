@@ -73,6 +73,7 @@ public class Main {
                 case "-h":
                     printUsage();
                     System.exit(0);
+                    break;
                 default:
                     if (path == null) {
                         path = arg;
@@ -86,12 +87,13 @@ public class Main {
             printUsage();
             System.exit(1);
         }
-        final Path wildfly = Paths.get(args[0]).normalize();
+        final Path wildfly = Paths.get(path).normalize();
         // Validate the home directory
         if (Files.notExists(wildfly)) {
             printUsage();
             System.exit(1);
         }
+        System.exit(0);
         // Temp directory
         final Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"), "wildfly-tests");
         // Delete the file if it exists
@@ -147,7 +149,7 @@ public class Main {
         usage.append('\t').append("--host <hostname> (default is 127.0.0.1)").append(nl);
         usage.append('\t').append("--port <port> (default is 9990)").append(nl);
         usage.append('\t').append("<wildfly-path>").append(nl);
-        usage.append('\t').append("Example: java -jar extended-wildfly-tests.jar -h 127.0.0.1 -p 9990 /opt/wildfly-core/").append(nl);
+        usage.append('\t').append("Example: java -jar extended-wildfly-tests.jar --host 127.0.0.1 --port 9990 /opt/wildfly-core/").append(nl);
         err.println(usage);
     }
 }
