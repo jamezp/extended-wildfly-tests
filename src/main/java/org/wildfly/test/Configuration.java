@@ -24,6 +24,7 @@ package org.wildfly.test;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.Collection;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 
@@ -39,4 +40,6 @@ public interface Configuration {
     PrintStream out();
 
     PrintStream err();
+
+    Collection<String> getArguments();
 }

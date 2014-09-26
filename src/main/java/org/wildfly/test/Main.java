@@ -26,6 +26,9 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.ServiceLoader;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -49,15 +52,16 @@ public class Main {
         String host = "127.0.0.1";
         int port = 9990;
         String path = null;
+        final Collection<String> arguments = new ArrayList<>();
 
         // Process the arguments
         for (int i = 0; i < args.length; i++) {
             final String arg = args[i];
             switch (arg) {
-                case "-h":
+                case "--host":
                     host = args[++i];
                     break;
-                case "-p":
+                case "--port":
                     try {
                         port = Integer.parseInt(args[++i]);
                     } catch (NumberFormatException e) {
@@ -66,8 +70,15 @@ public class Main {
                         System.exit(0);
                     }
                     break;
+                case "-h":
+                    printUsage();
+                    System.exit(0);
                 default:
-                    path = arg;
+                    if (path == null) {
+                        path = arg;
+                    } else {
+                        arguments.add(arg);
+                    }
                     break;
             }
         }
@@ -111,6 +122,11 @@ public class Main {
                 public PrintStream err() {
                     return err;
                 }
+
+                @Override
+                public Collection<String> getArguments() {
+                    return Collections.unmodifiableCollection(arguments);
+                }
             };
             final ServiceLoader<TestRunner> serviceLoader = ServiceLoader.load(TestRunner.class);
             for (final TestRunner aServiceLoader : serviceLoader) {
@@ -128,8 +144,8 @@ public class Main {
         final String nl = String.format("%n");
         StringBuilder usage = new StringBuilder();
         usage.append("Usage:").append(nl);
-        usage.append('\t').append("-h <hostname> (default is 127.0.0.1)").append(nl);
-        usage.append('\t').append("-p <port> (default is 9990)").append(nl);
+        usage.append('\t').append("--host <hostname> (default is 127.0.0.1)").append(nl);
+        usage.append('\t').append("--port <port> (default is 9990)").append(nl);
         usage.append('\t').append("<wildfly-path>").append(nl);
         usage.append('\t').append("Example: java -jar extended-wildfly-tests.jar -h 127.0.0.1 -p 9990 /opt/wildfly-core/").append(nl);
         err.println(usage);
