@@ -51,11 +51,56 @@ import org.wildfly.test.util.Directories;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class ScriptTests implements TestRunner {
+public class ScriptPaths implements TestRunner {
 
-    private static final Logger LOGGER = Logger.getLogger(ScriptTests.class);
+    private static final Logger LOGGER = Logger.getLogger(ScriptPaths.class);
 
-    private final List<String> pathNames = Arrays.asList("wildfly spaced", "wildfly double  spaced", "wildfly%home", "wild(fly)");
+    private final List<String> defaultPathNames = Arrays.asList(
+            "wildfly spaced",
+            "wildfly double  spaced",
+            "wildfly?home",
+            "bi\u00dfchen-dir",
+            "ni\u00f1o-dir",
+            "\"wildfly-home\""
+    );
+
+    /*
+     * Invalid Windows path characters per http://support2.microsoft.com/kb/177506
+     *  ^   Accent circumflex (caret)
+     *  &   Ampersand
+     *  '   Apostrophe (single quotation mark)
+     *  @   At sign
+     *  {   Brace left
+     *  }   Brace right
+     *  [   Bracket opening
+     *  ]   Bracket closing
+     *  ,   Comma
+     *  $   Dollar sign
+     *  =   Equal sign
+     *  !   Exclamation point
+     *  -   Hyphen
+     *  #   Number sign
+     *  (   Parenthesis opening
+     *  )   Parenthesis closing
+     *  %   Percent
+     *  .   Period
+     *  +   Plus
+     *  ~   Tilde
+     *  _   Underscore
+     */
+
+    private final List<String> linuxPathNames = Arrays.asList(
+            "wildfly\\home",
+            "wildfly%home",
+            "wildfly#home",
+            "wildfly$home",
+            "wildfly@home",
+            "wildfly(home)",
+            "wildfly!home",
+            "wildfly^home",
+            "wildfly=home",
+            "wildfly'home"
+    );
 
     @Override
     public void run(final Configuration config) {
@@ -63,6 +108,12 @@ public class ScriptTests implements TestRunner {
         final Collection<String> validDomainPaths = new ArrayList<>();
         final Map<String, Exception> invalidStandalonePaths = new LinkedHashMap<>();
         final Collection<String> validStandalonePaths = new ArrayList<>();
+
+        // Create the path names to test
+        final Collection<String> pathNames = new ArrayList<>(defaultPathNames);
+        if (!isWindows()) {
+            pathNames.addAll(linuxPathNames);
+        }
         for (String pathName : pathNames) {
             Path path = null;
             try {
@@ -170,10 +221,14 @@ public class ScriptTests implements TestRunner {
     }
 
     private static String scriptName(final String prefix) {
-        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win")) {
+        if (isWindows()) {
             return prefix + ".bat";
         }
         return prefix + ".sh";
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
     }
 
     private static String fill(final char c, final int len) {
