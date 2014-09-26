@@ -101,7 +101,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <dependencyReducedPomLocation>${build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+                            <dependencyReducedPomLocation>${project.build.directory}${file.separator}dependency-reduced-pom.xml</dependencyReducedPomLocation>
                         </configuration>
                     </execution>
                 </executions>
