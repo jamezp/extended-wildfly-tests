@@ -54,6 +54,8 @@ import org.wildfly.test.util.Directories;
 public class ScriptPaths implements TestRunner {
 
     private static final Logger LOGGER = Logger.getLogger(ScriptPaths.class);
+    private static final String DOMAIN_SCRIPT = scriptName("domain");
+    private static final String STANDALONE_SCRIPT = scriptName("standalone");
 
     private final List<String> defaultPathNames = Arrays.asList(
             "wildfly spaced",
@@ -159,11 +161,10 @@ public class ScriptPaths implements TestRunner {
     }
 
     private void launchDomain(final Configuration config, final Path path) throws IOException, InterruptedException {
-        final String scriptName = scriptName("domain");
         Process p = null;
         try {
             final DomainClient client = DomainClient.Factory.create(config.getClient());
-            p = start(path, scriptName);
+            p = start(path, DOMAIN_SCRIPT);
             final Map<ServerIdentity, ServerStatus> servers = waitForDomain(p, client);
             shutdownDomain(client, servers);
             // Wait for a bit before we continue to ensure everything shuts down
@@ -174,10 +175,9 @@ public class ScriptPaths implements TestRunner {
     }
 
     private void launchStandalone(final Configuration config, final Path path) throws IOException, InterruptedException {
-        final String scriptName = scriptName("standalone");
         Process p = null;
         try {
-            p = start(path, scriptName);
+            p = start(path, STANDALONE_SCRIPT);
             waitForStandalone(p, config.getClient());
             shutdownStandalone(config.getClient());
             // Wait for a bit before we continue to ensure everything shuts down
