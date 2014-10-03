@@ -26,6 +26,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STOPPING;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,7 @@ public class ServerHelper {
             timeout -= (System.currentTimeMillis() - before);
             if (!serverAvailable) {
                 if (ProcessHelper.processHasDied(process)) {
-                    throw new RuntimeException("Process died: " + process.exitValue());
+                    return Collections.emptyMap();
                 }
                 Thread.sleep(sleep);
                 timeout -= sleep;
@@ -127,7 +128,7 @@ public class ServerHelper {
             timeout -= (System.currentTimeMillis() - before);
             if (!serverAvailable) {
                 if (ProcessHelper.processHasDied(process)) {
-                    throw new RuntimeException("Process died: " + process.exitValue());
+                    return;
                 }
                 Thread.sleep(sleep);
                 timeout -= sleep;

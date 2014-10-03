@@ -20,12 +20,17 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.test;
+package org.wildfly.test.util;
+
+import java.util.Locale;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public interface TestRunner {
+public class Platform {
 
-    void run(Configuration config);
+
+    public static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
+    }
 }

@@ -20,26 +20,41 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.test;
+package org.wildfly.test.scripts;
 
-import java.io.PrintStream;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-import org.jboss.as.controller.client.ModelControllerClient;
+import org.wildfly.core.launcher.ProcessHelper;
+import org.wildfly.test.util.Platform;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public interface Configuration {
+abstract class AbstractScriptTest {
+    static final String DOMAIN_SCRIPT = scriptName("domain");
+    static final String STANDALONE_SCRIPT = scriptName("standalone");
 
-    Path getWildFlyHome();
+    static Process start(final Path home, final String scriptName, final Collection<String> args) throws IOException, InterruptedException {
+        final Path scriptPath = home.resolve("bin").resolve(scriptName).normalize();
+        final List<String> cmd = new ArrayList<>();
+        cmd.add(scriptPath.toString());
+        cmd.addAll(args);
+        final ProcessBuilder processBuilder = new ProcessBuilder(cmd)
+                .directory(home.toFile())
+                .inheritIO();
+        final Process p = processBuilder.start();
+        ProcessHelper.addShutdownHook(p);
+        return p;
+    }
 
-    ModelControllerClient getClient();
-
-    PrintStream out();
-
-    PrintStream err();
-
-    Collection<String> getArguments();
+    static String scriptName(final String prefix) {
+        if (Platform.isWindows()) {
+            return prefix + ".bat";
+        }
+        return prefix + ".sh";
+    }
 }

@@ -39,6 +39,11 @@
 
     <properties>
         <version.org.wildfly.core>1.0.0.Alpha5</version.org.wildfly.core>
+        <version.org.jboss.logmanager>2.0.0.Beta1</version.org.jboss.logmanager>
+        <version.junit>4.11</version.junit>
+
+
+        <wildfly.home>${project.build.directory}${file.separator}wildfly-core-${version.org.wildfly.core}</wildfly.home>
     </properties>
 
     <dependencyManagement>
@@ -57,7 +62,12 @@
             <dependency>
                 <groupId>org.jboss.logmanager</groupId>
                 <artifactId>jboss-logmanager</artifactId>
-                <version>2.0.0.Beta1</version>
+                <version>${version.org.jboss.logmanager}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -75,38 +85,68 @@
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
         </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>${project.name}</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.wildfly.test.Main</mainClass>
-                            <packageName>org.wildfly.test</packageName>
-                        </manifest>
-                    </archive>
+                    <systemPropertyVariables>
+                        <tmp.dir>${project.build.directory}${file.separator}wildfly-tmp</tmp.dir>
+                        <wildfly.home>${wildfly.home}</wildfly.home>
+                    </systemPropertyVariables>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <dependencyReducedPomLocation>${project.build.directory}${file.separator}dependency-reduced-pom.xml</dependencyReducedPomLocation>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>download-and-copy</id>
+            <activation>
+                <property>
+                    <name>!wildfly.home</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack-wildfly</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-build</artifactId>
+                                            <version>${version.org.wildfly.core}</version>
+                                            <type>zip</type>
+                                            <!-- overwrite to clean any previous deployments -->
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
