@@ -26,6 +26,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STOPPING;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,10 @@ public class ServerHelper {
 
     static {
         EMPTY_ADDRESS.protect();
+    }
+
+    public static ModelControllerClient createClientConnection() throws UnknownHostException {
+        return ModelControllerClient.Factory.create(Environment.HOSTNAME, Environment.PORT);
     }
 
 
@@ -93,7 +98,6 @@ public class ServerHelper {
                 op = Operations.createOperation("shutdown", address);
                 response = client.execute(op);
                 if (Operations.isSuccessfulOutcome(response)) {
-                    Map<ServerIdentity, ServerStatus> runningServers = client.getServerStatuses();
                     // Wait until the process has died
                     while (true) {
                         if (isDomainRunning(client, servers, true)) {

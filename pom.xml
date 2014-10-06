@@ -38,12 +38,12 @@
     </parent>
 
     <properties>
-        <version.org.wildfly.core>1.0.0.Alpha5</version.org.wildfly.core>
+        <version.org.wildfly.core>1.0.0.Alpha8</version.org.wildfly.core>
         <version.org.jboss.logmanager>2.0.0.Beta1</version.org.jboss.logmanager>
         <version.junit>4.11</version.junit>
 
-
-        <wildfly.home>${project.build.directory}${file.separator}wildfly-core-${version.org.wildfly.core}</wildfly.home>
+        <wildfly.tmp.dir>${project.build.directory}${file.separator}wildfly-tmp</wildfly.tmp.dir>
+        <wildfly.dist>${project.build.directory}${file.separator}wildfly-core-${version.org.wildfly.core}</wildfly.dist>
     </properties>
 
     <dependencyManagement>
@@ -101,8 +101,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <tmp.dir>${project.build.directory}${file.separator}wildfly-tmp</tmp.dir>
-                        <wildfly.home>${wildfly.home}</wildfly.home>
+                        <tmp.dir>${wildfly.tmp.dir}</tmp.dir>
+                        <wildfly.dist>${wildfly.dist}</wildfly.dist>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -114,7 +114,7 @@
             <id>download-and-copy</id>
             <activation>
                 <property>
-                    <name>!wildfly.home</name>
+                    <name>!wildfly.dist</name>
                 </property>
             </activation>
             <build>

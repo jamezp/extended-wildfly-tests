@@ -22,38 +22,30 @@
 
 package org.wildfly.test.scripts;
 
-import static org.wildfly.test.util.ServerHelper.shutdownDomain;
-import static org.wildfly.test.util.ServerHelper.shutdownStandalone;
-import static org.wildfly.test.util.ServerHelper.waitForDomain;
-import static org.wildfly.test.util.ServerHelper.waitForStandalone;
+import static org.wildfly.test.util.Environment.NEW_LINE;
+import static org.wildfly.test.util.Environment.WILDFLY_HOME;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.domain.DomainClient;
-import org.jboss.as.controller.client.helpers.domain.ServerIdentity;
-import org.jboss.as.controller.client.helpers.domain.ServerStatus;
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.test.util.Directories;
-import org.wildfly.test.util.Platform;
+import org.wildfly.test.util.Environment;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class ScriptPathsTestCase extends AbstractScriptTest {
+public class ScriptPathsTestCase {
 
     private final List<String> defaultPathNames = Arrays.asList(
             "wildfly spaced",
@@ -94,19 +86,22 @@ public class ScriptPathsTestCase extends AbstractScriptTest {
             "\"wildfly-home\""
     );
 
-    private final Path wildflyHome = Paths.get(System.getProperty("wildfly.home"));
-    private final String hostname = System.getProperty("wildfly.hostname", "localhost");
-    private final int port = Integer.parseInt(System.getProperty("wildfly.port", "9990"));
+    @Test
+    public void testDomainPaths() throws Exception {
+        testPaths(ServerType.DOMAIN);
+    }
 
     @Test
-    public void testPaths() throws Exception {
+    public void testStandalonePaths() throws Exception {
+        testPaths(ServerType.STANDALONE);
+    }
 
-        final String nl = String.format("%n");
+    private void testPaths(final ServerType serverType) throws Exception {
         final StringBuilder failureMessage = new StringBuilder();
 
         // Create the path names to test
         final Collection<String> pathNames = new ArrayList<>(defaultPathNames);
-        if (!Platform.isWindows()) {
+        if (!Environment.isWindows()) {
             pathNames.addAll(linuxPathNames);
         }
         // Check for addition paths
@@ -115,24 +110,30 @@ public class ScriptPathsTestCase extends AbstractScriptTest {
             pathNames.addAll(Arrays.asList(additionalPaths.split(Pattern.quote(File.pathSeparator))));
         }
 
+        final Path wildflyHome = Environment.WILDFLY_HOME;
+
         for (String pathName : pathNames) {
+            Logger.getLogger(ScriptPathsTestCase.class).infof("Running %s", pathName);
             Path path = null;
-            try (final ModelControllerClient client = ModelControllerClient.Factory.create(hostname, port)) {
+            try {
                 // Copy the path into a new directory
                 path = Directories.copy(wildflyHome, wildflyHome.getParent().resolve(pathName).normalize());
-
-                // Test a domain launch
-                try {
-                    launchDomain(client, path);
-                } catch (Exception e) {
-                    failureMessage.append("Domain Failure: \"").append(pathName).append("\" : ").append(e.getMessage()).append(nl);
-                }
-
-                // Test a standalone launch
-                try {
-                    launchStandalone(client, path);
-                } catch (Exception e) {
-                    failureMessage.append("Standalone Failure: \"").append(pathName).append("\" : ").append(e.getMessage()).append(nl);
+                Process p = null;
+                try (final ServerScriptRunner scriptRunner = ServerScriptRunner.of(path, serverType, serverType.type + "-" + pathName)) {
+                    p = scriptRunner.startAndWait();
+                    // If the process has died, the start failed
+                    if (ProcessHelper.processHasDied(p)) {
+                        final StringBuilder msg = new StringBuilder("Process has died: ").append(p.exitValue()).append(NEW_LINE);
+                        for (String line : scriptRunner.readConsoleLines()) {
+                            msg.append(line).append(NEW_LINE);
+                        }
+                        failureMessage.append(msg);
+                    }
+                    scriptRunner.shutdown();
+                    // Wait for a bit before we continue to ensure everything shuts down
+                    TimeUnit.SECONDS.sleep(2L);
+                } finally {
+                    ProcessHelper.destroyProcess(p);
                 }
             } finally {
                 if (path != null) {
@@ -151,42 +152,6 @@ public class ScriptPathsTestCase extends AbstractScriptTest {
         }
         if (failureMessage.length() > 0) {
             Assert.fail(failureMessage.toString());
-        }
-    }
-
-
-    static void launchDomain(final ModelControllerClient client, final Path path) throws IOException, InterruptedException {
-        Process p = null;
-        try {
-            final DomainClient domainClient = DomainClient.Factory.create(client);
-            p = start(path, DOMAIN_SCRIPT, Collections.<String>emptyList());
-            final Map<ServerIdentity, ServerStatus> servers = waitForDomain(p, domainClient);
-            // If the process has died, the start failed
-            if (ProcessHelper.processHasDied(p)) {
-                throw new RuntimeException(String.format("Process has died: %d", p.exitValue()));
-            }
-            shutdownDomain(domainClient, servers);
-            // Wait for a bit before we continue to ensure everything shuts down
-            TimeUnit.SECONDS.sleep(5L);
-        } finally {
-            ProcessHelper.destroyProcess(p);
-        }
-    }
-
-    static void launchStandalone(final ModelControllerClient client, final Path path) throws IOException, InterruptedException {
-        Process p = null;
-        try {
-            p = start(path, STANDALONE_SCRIPT, Collections.<String>emptyList());
-            waitForStandalone(p, client);
-            // If the process has died, the start failed
-            if (ProcessHelper.processHasDied(p)) {
-                throw new RuntimeException(String.format("Process has died: %d", p.exitValue()));
-            }
-            shutdownStandalone(client);
-            // Wait for a bit before we continue to ensure everything shuts down
-            TimeUnit.SECONDS.sleep(2L);
-        } finally {
-            ProcessHelper.destroyProcess(p);
         }
     }
 }

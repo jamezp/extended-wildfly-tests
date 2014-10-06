@@ -20,17 +20,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.test.util;
+package org.wildfly.test.scripts;
 
 import java.util.Locale;
 
 /**
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
- */
-public class Platform {
+* @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+*/
+enum ServerType {
+    DOMAIN("Domain"),
+    STANDALONE("Standalone"),;
+    /**
+     * A displayable name for the server type
+     */
+    final String name;
+    /**
+     * The name of the server type in lower case
+     */
+    final String type;
 
-
-    public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
+    ServerType(final String name) {
+        this.name = name;
+        this.type = name.toLowerCase(Locale.ENGLISH);
     }
 }
