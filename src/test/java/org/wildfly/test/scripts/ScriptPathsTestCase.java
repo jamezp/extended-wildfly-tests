@@ -123,7 +123,12 @@ public class ScriptPathsTestCase {
                     p = scriptRunner.startAndWait();
                     // If the process has died, the start failed
                     if (ProcessHelper.processHasDied(p)) {
-                        final StringBuilder msg = new StringBuilder("Process has died: ").append(p.exitValue()).append(NEW_LINE);
+                        final StringBuilder msg = new StringBuilder("Process has died: ")
+                                .append(p.exitValue())
+                                .append(NEW_LINE)
+                                .append("Attempted Path: ")
+                                .append(pathName)
+                                .append(NEW_LINE);
                         for (String line : scriptRunner.readConsoleLines()) {
                             msg.append(line).append(NEW_LINE);
                         }
