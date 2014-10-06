@@ -26,20 +26,50 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class Environment {
 
+    /**
+     * The default new line string for the environment
+     */
     public static final String NEW_LINE = String.format("%n");
+    /**
+     * The default WildFly home directory specified by the {@code wildfly.dist} system property.
+     * <p/>
+     * Note that the {@code wildfly.dist} will not match the path specified here. The WildFly distribution is copied to
+     * a temporary directory to keep the environment clean.
+     * }
+     */
     public static final Path WILDFLY_HOME;
+    /**
+     * The host name specified by the {@code wildfly.hostname} system property or {@code localhost} by default.
+     */
     public static final String HOSTNAME = System.getProperty("wildfly.hostname", "localhost");
+    /**
+     * The port specified by the {@code wildfly.port} system property or {@code 9990} by default.
+     */
     public static final int PORT;
+    /**
+     * The temporary directory to use specified by the {@code tmp.dir} system property. If the property is not set,
+     * {@code java.io.tmpdir} is used.
+     */
     public static final Path TMP_DIR;
+    /**
+     * Additional environment variables.
+     */
+    public static final Map<String, String> ENV;
 
     static {
+        final Logger logger = Logger.getLogger(Environment.class);
         // Get the temp directory
         String tmpDir = System.getProperty("tmp.dir");
         if (tmpDir == null) {
@@ -51,22 +81,36 @@ public class Environment {
             try {
                 Files.createDirectories(TMP_DIR);
             } catch (IOException e) {
+                logger.debugf(e, "Could not create the temp directory: %s", TMP_DIR);
                 throw new RuntimeException("Could not create the temp directory: " + TMP_DIR, e);
             }
         }
 
         // Get the WildFly home directory and copy to the temp directory
         final String wildflyDist = System.getProperty("wildfly.dist");
-        if (wildflyDist == null) {
-            throw new RuntimeException("WildFly home property was not set");
-        }
+        assert wildflyDist != null : "WildFly home property, wildfly.dist, was not set";
         Path wildflyHome = Paths.get(wildflyDist);
         validateWildFlyHome(wildflyHome);
         // Copy the dist into the temp directory
         WILDFLY_HOME = TMP_DIR.resolve("wildfly");
+        if (Files.exists(WILDFLY_HOME)) {
+            try {
+                Directories.recursiveDelete(WILDFLY_HOME);
+            } catch (IOException e) {
+                logger.debugf(e, "Could not create the temp directory: %s", TMP_DIR);
+                throw new RuntimeException("Could not create the temp directory: " + WILDFLY_HOME, e);
+            }
+        }
+        try {
+            Files.createDirectories(WILDFLY_HOME);
+        } catch (IOException e) {
+            logger.debugf(e, "Could not create the temp directory: %s", TMP_DIR);
+            throw new RuntimeException("Could not create the temp directory: " + WILDFLY_HOME, e);
+        }
         try {
             Directories.copy(wildflyHome, WILDFLY_HOME);
         } catch (IOException e) {
+            logger.debug("Failed to copy WildFly Dist", e);
             throw new RuntimeException("Failed to copy WildFly Dist", e);
         }
 
@@ -74,8 +118,15 @@ public class Environment {
         try {
             PORT = Integer.parseInt(port);
         } catch (NumberFormatException e) {
+            logger.debugf(e, "Invalid port: %d", port);
             throw new RuntimeException("Invalid port: " + port, e);
         }
+        // Create any custom environment variables
+        final Map<String, String> env = new HashMap<>();
+        if (isWindows()) {
+            env.put("NOPAUSE", "true");
+        }
+        ENV = Collections.unmodifiableMap(env);
     }
 
     public static boolean isValidWildFlyHome(final Path wildflyHome) {

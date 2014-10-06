@@ -25,7 +25,6 @@ package org.wildfly.test.scripts;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -74,6 +73,7 @@ class ScriptRunner implements Closeable {
                 .directory(wildflyHome.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(consolePath.toFile());
+        processBuilder.environment().putAll(Environment.ENV);
         final Process p = processBuilder.start();
         ProcessHelper.addShutdownHook(p);
         currentProcess = p;

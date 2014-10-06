@@ -65,7 +65,7 @@ public class ScriptArgumentsTestCase {
 
             Process process = runner.start("--help");
             // Wait until the process is dead, then read the output
-            if (isAlive(process, 2L)) {
+            if (isAlive(process, 5L)) {
                 // The process did not end quickly, could be running
                 try {
                     runner.shutdown();
@@ -83,7 +83,7 @@ public class ScriptArgumentsTestCase {
             }
             boolean found = false;
             boolean invalidOptionFound = false;
-            Pattern pattern = Pattern.compile("(.*:\\s+" + serverType.type + "\\.(sh|bat)\\s+\\[.+)");
+            Pattern pattern = Pattern.compile("(.*:\\s+" + serverType.type + "(\\.sh|\\.bat)?\\s+\\[.+)");
             StringBuilder msg = new StringBuilder()
                     .append(serverType.name)
                     .append(" --help failed:")
