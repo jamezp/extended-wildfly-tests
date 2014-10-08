@@ -98,19 +98,22 @@ public class ScriptPathsTestCase {
     }
 
     private void testPaths(final ServerType serverType) throws Exception {
-        final StringBuilder failureMessage = new StringBuilder();
-
         // Create the path names to test
-        final Collection<String> pathNames = new ArrayList<>(defaultPathNames);
-        if (!Environment.isWindows()) {
-            pathNames.addAll(linuxPathNames);
-        }
-        // Check for addition paths
-        final String additionalPaths = System.getProperty("wildfly.script.paths");
-        if (additionalPaths != null && !additionalPaths.isEmpty()) {
-            pathNames.addAll(Arrays.asList(additionalPaths.split(Pattern.quote(File.pathSeparator))));
+        final Collection<String> pathNames = new ArrayList<>();
+
+        // Check for the system property
+        final String testPathsValue = System.getProperty("wildfly.test.paths");
+        if (testPathsValue != null && !testPathsValue.isEmpty()) {
+            pathNames.addAll(Arrays.asList(testPathsValue.split(Pattern.quote(File.pathSeparator))));
+        } else {
+            // Load the default paths
+            pathNames.addAll(defaultPathNames);
+            if (!Environment.isWindows()) {
+                pathNames.addAll(linuxPathNames);
+            }
         }
 
+        final StringBuilder failureMessage = new StringBuilder();
         final Path wildflyHome = Environment.WILDFLY_HOME;
 
         for (String pathName : pathNames) {
