@@ -60,7 +60,8 @@ public class ScriptPathsTestCase {
             "wildfly!home",
             "wildfly^home",
             "wildfly=home",
-            "wildfly'home"
+            "wildfly'home",
+            "wildfly-\u017dlut\u00fdK\u016f\u0148"
     );
 
     /*
