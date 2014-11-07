@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.jboss.logging.Logger;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.test.util.Environment;
 
@@ -40,6 +41,7 @@ import org.wildfly.test.util.Environment;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 class ScriptRunner implements Closeable {
+    static final Logger LOGGER = Logger.getLogger(ScriptRunner.class.getPackage().getName());
 
     private final Path wildflyHome;
     private final String scriptName;
@@ -69,6 +71,7 @@ class ScriptRunner implements Closeable {
         final List<String> cmd = new ArrayList<>();
         cmd.add(scriptPath.toString());
         cmd.addAll(args);
+        LOGGER.debugf("Starting with command: %s", cmd);
         final ProcessBuilder processBuilder = new ProcessBuilder(cmd)
                 .directory(wildflyHome.toFile())
                 .redirectErrorStream(true)

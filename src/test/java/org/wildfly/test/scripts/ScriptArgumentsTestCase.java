@@ -24,6 +24,7 @@ package org.wildfly.test.scripts;
 
 import static org.wildfly.test.util.Environment.NEW_LINE;
 import static org.wildfly.test.util.Environment.WILDFLY_HOME;
+import static org.wildfly.test.util.Environment.isWindows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,6 +43,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.test.util.Directories;
+import org.wildfly.test.util.Environment;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -65,14 +67,23 @@ public class ScriptArgumentsTestCase {
 
     @Test
     public void testStandaloneDirectoryOverrides() throws Exception {
-        testLogDirOverride(Files.createTempDirectory("wf-logs"));
-        testLogDirOverride(Files.createTempDirectory("wf logs"));
-        testLogDirOverride(Files.createTempDirectory("wf  logs"));
+        final Path[] tempDirs = {
+                Environment.TMP_DIR.resolve("wf-logs"),
+                Environment.TMP_DIR.resolve("wf logs"),
+                Environment.TMP_DIR.resolve("wf  logs"),
+        };
+        for (Path dir : tempDirs) {
+            testLogDirOverride(dir);
+        }
+        // Delete all the temp directories
+        for (Path dir : tempDirs) {
+            Directories.recursiveDelete(dir);
+        }
     }
 
     private void testLogDirOverride(final Path logDir) throws Exception {
         try (final ServerScriptRunner runner = ServerScriptRunner.of(WILDFLY_HOME, ServerType.STANDALONE)) {
-            Process process = runner.startAndWait("-Djboss.server.log.dir=" + logDir);
+            Process process = runner.startAndWait(createDirProperty("jboss.server.log.dir", logDir));
             // Assert the process is still alive
             if (!isAlive(process, 5L)) {
                 // Read the console lines to report the error
@@ -84,10 +95,9 @@ public class ScriptArgumentsTestCase {
             }
 
             // Ensure the log directory exists and the server.log is in the directory
-            Assert.assertTrue(Files.exists(logDir));
+            Assert.assertTrue("Log directory '" + logDir + "' does not exist", Files.exists(logDir));
             Assert.assertTrue("server.log does not exist in the " + logDir + " directory", Files.exists(logDir.resolve("server.log")));
-        } finally {
-            Directories.recursiveDelete(logDir);
+            runner.shutdown();
         }
     }
 
@@ -131,6 +141,20 @@ public class ScriptArgumentsTestCase {
             Assert.assertTrue(msg.toString(), found);
             Assert.assertFalse(msg.toString(), invalidOptionFound);
         }
+    }
+
+    static String createDirProperty(final String key, final Path dir) {
+        final StringBuilder result = new StringBuilder(32)
+                .append("-D")
+                .append(key)
+                .append('=');
+        final String d = dir.normalize().toString();
+        if (isWindows() && d.contains(" ")) {
+            result.append('"').append(d).append('"');
+        } else {
+            result.append(d);
+        }
+        return result.toString();
     }
 
 
