@@ -26,6 +26,8 @@ import static org.wildfly.test.util.Environment.NEW_LINE;
 import static org.wildfly.test.util.Environment.WILDFLY_HOME;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -39,6 +41,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.core.launcher.ProcessHelper;
+import org.wildfly.test.util.Directories;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -58,6 +61,34 @@ public class ScriptArgumentsTestCase {
     public void testHelpArgument() throws Exception {
         testHelp(ServerType.DOMAIN);
         testHelp(ServerType.STANDALONE);
+    }
+
+    @Test
+    public void testStandaloneDirectoryOverrides() throws Exception {
+        testLogDirOverride(Files.createTempDirectory("wf-logs"));
+        testLogDirOverride(Files.createTempDirectory("wf logs"));
+        testLogDirOverride(Files.createTempDirectory("wf  logs"));
+    }
+
+    private void testLogDirOverride(final Path logDir) throws Exception {
+        try (final ServerScriptRunner runner = ServerScriptRunner.of(WILDFLY_HOME, ServerType.STANDALONE)) {
+            Process process = runner.startAndWait("-Djboss.server.log.dir=" + logDir);
+            // Assert the process is still alive
+            if (!isAlive(process, 5L)) {
+                // Read the console lines to report the error
+                final StringBuilder msg = new StringBuilder("Server startup failed:").append(NEW_LINE);
+                for (String line : runner.readConsoleLines()) {
+                    msg.append(line).append(NEW_LINE);
+                }
+                Assert.fail(msg.toString());
+            }
+
+            // Ensure the log directory exists and the server.log is in the directory
+            Assert.assertTrue(Files.exists(logDir));
+            Assert.assertTrue("server.log does not exist in the " + logDir + " directory", Files.exists(logDir.resolve("server.log")));
+        } finally {
+            Directories.recursiveDelete(logDir);
+        }
     }
 
     private void testHelp(ServerType serverType) throws Exception {

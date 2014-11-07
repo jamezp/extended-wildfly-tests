@@ -61,6 +61,7 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
             @Override
             void shutdown() throws IOException {
                 ServerHelper.shutdownStandalone(client);
+                this.isShutdown = true;
             }
 
             @Override
@@ -72,8 +73,11 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
 
             @Override
             public void close() throws IOException {
-                super.close();
-                client.close();
+                try {
+                    super.close();
+                } finally {
+                    client.close();
+                }
             }
 
             @Override
@@ -94,6 +98,7 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
             @Override
             void shutdown() throws IOException {
                 ServerHelper.shutdownDomain(client, servers);
+                this.isShutdown = true;
             }
 
             @Override
@@ -105,8 +110,11 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
 
             @Override
             public void close() throws IOException {
-                super.close();
-                client.close();
+                try {
+                    super.close();
+                } finally {
+                    client.close();
+                }
             }
 
             @Override
@@ -119,6 +127,8 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
         };
     }
 
+    protected volatile boolean isShutdown = false;
+
     Process startAndWait() throws IOException, InterruptedException {
         return startAndWait(Collections.<String>emptyList());
     }
@@ -130,4 +140,15 @@ abstract class ServerScriptRunner extends ScriptRunner implements Closeable {
     abstract Process startAndWait(final Collection<String> args) throws IOException, InterruptedException;
 
     abstract void shutdown() throws IOException;
+
+    @Override
+    public void close() throws IOException {
+        try {
+            if (!isShutdown) {
+                shutdown();
+            }
+        } finally {
+            super.close();
+        }
+    }
 }
