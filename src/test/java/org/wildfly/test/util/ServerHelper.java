@@ -104,7 +104,7 @@ public class ServerHelper {
                             try {
                                 TimeUnit.MILLISECONDS.sleep(20L);
                             } catch (InterruptedException e) {
-                                LOGGER.debug("Interrupted during sleep", e);
+                                LOGGER.trace("Interrupted during sleep", e);
                             }
                         } else {
                             break;
@@ -117,7 +117,7 @@ public class ServerHelper {
                 LOGGER.debugf("Failed to execute %s: %s", op, Operations.getFailureDescription(response));
             }
         } catch (IOException | InterruptedException e) {
-            LOGGER.debug("Error shutting down domain", e);
+            LOGGER.trace("Error shutting down domain", e);
         }
     }
 
@@ -153,7 +153,7 @@ public class ServerHelper {
                         && !CONTROLLER_PROCESS_STATE_STOPPING.equals(state);
             }
         } catch (RuntimeException | IOException e) {
-            LOGGER.debug("Interrupted determining if standalone is running", e);
+            LOGGER.trace("Interrupted determining if standalone is running", e);
         }
         return false;
     }
@@ -168,7 +168,7 @@ public class ServerHelper {
                         try {
                             TimeUnit.MILLISECONDS.sleep(20L);
                         } catch (InterruptedException e) {
-                            LOGGER.debug("Interrupted during sleep", e);
+                            LOGGER.trace("Interrupted during sleep", e);
                         }
                     } else {
                         break;
@@ -178,7 +178,7 @@ public class ServerHelper {
                 LOGGER.debugf("Failed to execute %s: %s", op, Operations.getFailureDescription(response));
             }
         } catch (IOException e) {
-            LOGGER.debug("Interrupted shutting down standalone", e);
+            LOGGER.trace("Interrupted shutting down standalone", e);
         }
     }
 
@@ -200,7 +200,7 @@ public class ServerHelper {
             }
             return statuses.size() == servers.size();
         } catch (Exception e) {
-            LOGGER.debug("Interrupted determining if domain is running", e);
+            LOGGER.trace("Interrupted determining if domain is running", e);
         }
         return false;
     }
