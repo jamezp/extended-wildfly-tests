@@ -121,6 +121,12 @@ public class ServerHelper {
         }
     }
 
+    public static void waitForStandalone(final Process process) throws InterruptedException, IOException {
+        try (final ModelControllerClient client = createClientConnection()) {
+            waitForStandalone(process, client);
+        }
+    }
+
     public static void waitForStandalone(final Process process, final ModelControllerClient client) throws InterruptedException, IOException {
         long startupTimeout = 30;
         long timeout = startupTimeout * 1000;
@@ -144,6 +150,15 @@ public class ServerHelper {
         }
     }
 
+    public static boolean isStandaloneRunning() {
+        try (final ModelControllerClient client = createClientConnection()) {
+            return isStandaloneRunning(client);
+        } catch (RuntimeException | IOException e) {
+            LOGGER.trace("Interrupted determining if standalone is running", e);
+        }
+        return false;
+    }
+
     public static boolean isStandaloneRunning(final ModelControllerClient client) {
         try {
             final ModelNode response = client.execute(Operations.createReadAttributeOperation(EMPTY_ADDRESS, "server-state"));
@@ -156,6 +171,14 @@ public class ServerHelper {
             LOGGER.trace("Interrupted determining if standalone is running", e);
         }
         return false;
+    }
+
+    public static void shutdownStandalone() {
+        try (final ModelControllerClient client = createClientConnection()) {
+            shutdownStandalone(client);
+        } catch (IOException e) {
+            LOGGER.trace("Interrupted shutting down standalone", e);
+        }
     }
 
     public static void shutdownStandalone(final ModelControllerClient client) {

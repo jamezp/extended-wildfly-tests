@@ -41,7 +41,7 @@ public class Environment {
     /**
      * The default new line string for the environment
      */
-    public static final String NEW_LINE = String.format("%n");
+    public static final String NEW_LINE = System.lineSeparator();
     /**
      * The default WildFly home directory specified by the {@code wildfly.dist} system property.
      * <p/>

@@ -104,6 +104,92 @@ public class ScriptPathsTestCase {
         testPaths(ServerType.STANDALONE);
     }
 
+    @Test
+    public void testCliPaths() throws Exception {
+        // Create the path names to test
+        final Collection<String> pathNames = new ArrayList<>();
+
+        // Check for the system property
+        final String testPathsValue = System.getProperty("wildfly.test.paths");
+        if (testPathsValue != null && !testPathsValue.isEmpty()) {
+            pathNames.addAll(Arrays.asList(testPathsValue.split(Pattern.quote(File.pathSeparator))));
+        } else {
+            // Load the default paths
+            pathNames.addAll(defaultPathNames);
+            if (!Environment.isWindows()) {
+                pathNames.addAll(linuxPathNames);
+            }
+        }
+
+        boolean failed = false;
+        final Path wildflyHome = Environment.WILDFLY_HOME;
+
+        for (String pathName : pathNames) {
+            LOGGER.infof("Running CLI %s", pathName);
+            Path path = null;
+            try {
+                // Copy the path into a new directory
+                path = Directories.copy(wildflyHome, wildflyHome.getParent().resolve(pathName).normalize());
+                Process scriptProcess = null;
+                Process serverProcess = null;
+                try (final ScriptRunner scriptRunner = ScriptRunner.of(path, Scripts.scriptName("jboss-cli"))) {
+                    // Start a standalone instance
+                    final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(path);
+                    serverProcess = Launcher.of(commandBuilder)
+                            .setRedirectErrorStream(true)
+                            .setDirectory(path.normalize())
+                            .redirectOutput(scriptRunner.getTempDir().resolve("standalone-output-" + pathName + ".log"))
+                            .addEnvironmentVariables(Environment.ENV)
+                            .launch();
+                    ;
+                    ServerHelper.waitForStandalone(serverProcess);
+                    scriptProcess = scriptRunner.start("-c", "--command=:shutdown");
+                    // Wait for a bit to ensure the command had time to execute and the server time to shutdown
+                    TimeUnit.SECONDS.sleep(2L);
+                    final List<String> consoleLines = scriptRunner.readConsoleLines();
+                    if (!consoleLines.contains("{\"outcome\" => \"success\"}")) {
+                        failed = true;
+                        final StringBuilder failureMessage = new StringBuilder().append("Failed to find a successful message for path '")
+                                .append(path)
+                                .append("' : ")
+                                .append(NEW_LINE);
+                        for (String line : consoleLines) {
+                            failureMessage.append('\t').append(line).append(NEW_LINE);
+                        }
+                        LOGGER.error(failureMessage.toString());
+                    }
+                    // Ensure the server has been shutdown
+                    if (ServerHelper.isStandaloneRunning()) {
+                        ServerHelper.shutdownStandalone();
+                        LOGGER.errorf("The server was not shut down via the cli :shutdown command for path '%s'", path);
+                    }
+                    if (!failed) {
+                        LOGGER.infof("Success %s", pathName);
+                    }
+                } finally {
+                    ProcessHelper.destroyProcess(scriptProcess);
+                    ProcessHelper.destroyProcess(serverProcess);
+                }
+            } finally {
+                if (path != null) {
+                    try {
+                        Directories.recursiveDelete(path);
+                    } catch (IOException ignore) {
+                    }
+                }
+            }
+        }
+        // Wait for a moment to ensure things are cleaned up
+        try {
+            TimeUnit.SECONDS.sleep(2L);
+        } catch (InterruptedException ignore) {
+
+        }
+        if (failed) {
+            Assert.fail("One or more tests have failed. See the above logs to determine the failure.");
+        }
+    }
+
     private void testPaths(final ServerType serverType) throws Exception {
         // Create the path names to test
         final Collection<String> pathNames = new ArrayList<>();
