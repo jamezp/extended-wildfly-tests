@@ -69,7 +69,11 @@ class ScriptRunner implements Closeable {
         consolePath = createConsolePath();
         final Path scriptPath = wildflyHome.resolve("bin").resolve(scriptName).normalize();
         final List<String> cmd = new ArrayList<>();
-        cmd.add(scriptPath.toString());
+        if (Environment.isWindows()) {
+            cmd.add("\"" + scriptPath + "\"");
+        } else {
+            cmd.add(scriptPath.toString());
+        }
         cmd.addAll(args);
         LOGGER.debugf("Starting with command: %s", cmd);
         final ProcessBuilder processBuilder = new ProcessBuilder(cmd)
